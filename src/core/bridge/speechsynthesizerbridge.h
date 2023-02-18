@@ -22,6 +22,8 @@ void SpeechSynthesizerSpeak(const char* text, const char* language);
 
 #ifdef __cplusplus
 };
+#include <string>
+void SpeechSynthesizerSpeakStr(std::string text, const char* language);
 #endif
 
 #endif /* speechsynthesizerbridge_h */

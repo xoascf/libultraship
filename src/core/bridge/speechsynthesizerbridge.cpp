@@ -45,3 +45,12 @@ void SpeechSynthesizerSpeak(const char* text, const char* language) {
     speechSynthesizer->Speak(text, language);
 }
 }
+
+void SpeechSynthesizerSpeakStr(std::string text, const char* language) {
+    auto speechSynthesizer = Ship::Window::GetInstance()->GetSpeechSynthesizer();
+    if (speechSynthesizer == nullptr) {
+        return;
+    }
+
+    speechSynthesizer->SpeakStr(text, language);
+}
