@@ -9,6 +9,7 @@
 #define SpeechSynthesizer_h
 
 #include <stdio.h>
+#include <string>
 
 namespace Ship {
 class SpeechSynthesizer {
@@ -18,6 +19,7 @@ class SpeechSynthesizer {
     bool Init(void);
     void Uninitialize(void);
     virtual void Speak(const char* text, const char* language) = 0;
+    virtual void SpeakStr(std::string text, const char* language) = 0;
 
     bool IsInitialized(void);
 

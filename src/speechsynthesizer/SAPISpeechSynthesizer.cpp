@@ -10,6 +10,8 @@
 #include <thread>
 #include <string>
 #include <spdlog/fmt/fmt.h>
+#include <atlbase.h>
+#include <atlconv.h>
 
 ISpVoice* mVoice = NULL;
 
@@ -30,24 +32,39 @@ void SAPISpeechSynthesizer::DoUninitialize() {
     CoUninitialize();
 }
 
-void SpeakThreadTask(const char* text, const char* language) {
-    auto speak =
-        fmt::format("<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='{}'>{}</speak>",
-                    language, text)
-            .c_str();
+std::string GetSpeak(const std::string& text, const char* language) {
+    return fmt::format(
+        "<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='{}'>{}</speak>", language, text);
+}
 
+void Speak(LPCWSTR wtext) {
+    mVoice->Speak(wtext, SPF_IS_XML | SPF_ASYNC | SPF_PURGEBEFORESPEAK, NULL);
+}
+
+void SpeakThreadTask(const char* text, const char* language) {
+    std::string speak = GetSpeak(text, language);
+    const char* cstr = speak.c_str();
     const int w = 512;
     int* wp = const_cast<int*>(&w);
-    *wp = strlen(speak);
-
+    *wp = strlen(cstr);
     wchar_t wtext[w];
-    mbstowcs(wtext, speak, strlen(speak) + 1);
+    mbstowcs(wtext, cstr, strlen(cstr) + 1);
+    Speak(wtext);
+}
 
-    mVoice->Speak(wtext, SPF_IS_XML | SPF_ASYNC | SPF_PURGEBEFORESPEAK, NULL);
+void SpeakStrThreadTask(std::string text, const char* language) {
+    std::string speak = GetSpeak(text, language);
+    ATL::CA2W pszWide(speak.c_str(), CP_UTF8);
+    Speak(pszWide);
 }
 
 void SAPISpeechSynthesizer::Speak(const char* text, const char* language) {
     std::thread t1(SpeakThreadTask, text, language);
     t1.detach();
+}
+
+void SAPISpeechSynthesizer::SpeakStr(std::string text, const char* language) {
+    std::thread t2(SpeakStrThreadTask, text, language);
+    t2.detach();
 }
 } // namespace Ship
