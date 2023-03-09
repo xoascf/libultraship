@@ -32,4 +32,16 @@ void DarwinSpeechSynthesizer::Speak(const char* text, const char* language) {
     [(__bridge AVSpeechSynthesizer *)mSynthesizer stopSpeakingAtBoundary:AVSpeechBoundaryImmediate];
     [(__bridge AVSpeechSynthesizer *)mSynthesizer speakUtterance:utterance];
 }
+
+void DarwinSpeechSynthesizer::Speak(std::string text, const char* language) {
+    AVSpeechUtterance *utterance = [AVSpeechUtterance speechUtteranceWithString:[NSString stringWithUTF8String:text.c_str()]];
+    [utterance setVoice:[AVSpeechSynthesisVoice voiceWithLanguage:@(language)]];
+
+    if (@available(macOS 11.0, *)) {
+        [utterance setPrefersAssistiveTechnologySettings:YES];
+    }
+
+    [(__bridge AVSpeechSynthesizer *)mSynthesizer stopSpeakingAtBoundary:AVSpeechBoundaryImmediate];
+    [(__bridge AVSpeechSynthesizer *)mSynthesizer speakUtterance:utterance];
+}
 }
