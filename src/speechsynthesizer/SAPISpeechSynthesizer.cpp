@@ -63,7 +63,7 @@ void SAPISpeechSynthesizer::Speak(const char* text, const char* language) {
     t1.detach();
 }
 
-void SAPISpeechSynthesizer::SpeakStr(std::string text, const char* language) {
+void SAPISpeechSynthesizer::Speak(std::string text, const char* language) {
     std::thread t2(SpeakStrThreadTask, text, language);
     t2.detach();
 }

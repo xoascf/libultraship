@@ -18,7 +18,7 @@ class SAPISpeechSynthesizer : public SpeechSynthesizer {
     SAPISpeechSynthesizer();
 
     void Speak(const char* text, const char* language);
-    void SpeakStr(std::string text, const char* language);
+    void Speak(std::string text, const char* language);
 
   protected:
     bool DoInit(void);
