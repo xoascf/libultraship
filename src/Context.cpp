@@ -67,6 +67,7 @@ void Context::Init(const std::vector<std::string>& otrFiles, const std::unordere
     InitCrashHandler();
     InitConsole();
     InitWindow();
+    InitSpeechSynthesis();
     InitAudio();
 }
 
@@ -205,6 +206,14 @@ void Context::InitWindow() {
     GetWindow()->Init();
 }
 
+void Context::InitSpeechSynthesis() {
+#ifdef __APPLE__
+    mSpeechSynthesizer = std::make_shared<DarwinSpeechSynthesizer>();
+#elif defined(_WIN32)
+    mSpeechSynthesizer = std::make_shared<SAPISpeechSynthesizer>();
+#endif
+}
+
 std::shared_ptr<ConsoleVariable> Context::GetConsoleVariables() {
     return mConsoleVariables;
 }
@@ -287,4 +296,9 @@ std::string Context::GetPathRelativeToAppBundle(const std::string path) {
 std::string Context::GetPathRelativeToAppDirectory(const std::string path) {
     return GetAppDirectoryPath() + "/" + path;
 }
+
+std::shared_ptr<SpeechSynthesizer> Context::GetSpeechSynthesizer() {
+    return mSpeechSynthesizer;
+}
+
 } // namespace LUS
