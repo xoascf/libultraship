@@ -9,9 +9,12 @@ endif()
 
 #=================== Top-Level ===================
 
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/install_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/install_config.h @ONLY)
+
 set(Source_Files__TopLevel
     ${CMAKE_CURRENT_SOURCE_DIR}/Context.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Context.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/install_config.h
 )
 
 source_group("" FILES ${Source_Files__TopLevel})
@@ -307,11 +310,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_direct3d_common.h
         ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_direct3d_common.cpp
     )
-elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    list(APPEND Source_Files__Graphic
-        ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_glx.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_glx.cpp
-    )
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     list(APPEND Source_Files__Graphic
         ${CMAKE_CURRENT_SOURCE_DIR}/graphic/Fast3D/gfx_metal.cpp
@@ -372,7 +370,7 @@ endif()
 #=================== Packages & Includes ===================
 
 target_include_directories(libultraship
-    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../extern
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../extern ${CMAKE_CURRENT_BINARY_DIR}
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../extern/spdlog/include ${CMAKE_CURRENT_SOURCE_DIR}/../extern/stb
 )
 
@@ -404,9 +402,8 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    find_package(X11)
     find_package(PulseAudio)
-    target_link_libraries(libultraship PRIVATE ${X11_LIBRARIES} ${PULSEAUDIO_LIBRARY})
+    target_link_libraries(libultraship PRIVATE ${PULSEAUDIO_LIBRARY})
 endif()
 
 #=================== Compile Options & Defs ===================

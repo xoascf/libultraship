@@ -42,6 +42,7 @@
 #include "gfx_screen_config.h"
 #ifdef _WIN32
 #include <WTypesbase.h>
+#include <Windows.h>
 #endif
 
 #define GFX_BACKEND_NAME "SDL"
@@ -223,27 +224,42 @@ static void set_fullscreen(bool on, bool call_callback) {
     if (fullscreen_state == on) {
         return;
     }
-    fullscreen_state = on;
+    int display_in_use = SDL_GetWindowDisplayIndex(wnd);
+    if (display_in_use < 0) {
+        SPDLOG_WARN("Can't detect on which monitor we are. Probably out of display area?");
+        SPDLOG_WARN(SDL_GetError());
+    }
 
     if (on) {
         // OTRTODO: Get mode from config.
         SDL_DisplayMode mode;
-        SDL_GetDesktopDisplayMode(0, &mode);
-        window_width = mode.w;
-        window_height = mode.h;
-        SDL_ShowCursor(false);
+        if (SDL_GetDesktopDisplayMode(display_in_use, &mode) >= 0) {
+            SDL_SetWindowDisplayMode(wnd, &mode);
+            SDL_ShowCursor(false);
+        } else {
+            SPDLOG_ERROR(SDL_GetError());
+        }
     } else {
         auto conf = LUS::Context::GetInstance()->GetConfig();
         window_width = conf->GetInt("Window.Width", 640);
         window_height = conf->GetInt("Window.Height", 480);
         int32_t posX = conf->GetInt("Window.PositionX", 100);
         int32_t posY = conf->GetInt("Window.PositionY", 100);
+        if (display_in_use < 0) { // Fallback to default if out of bounds
+            posX = 100;
+            posY = 100;
+        }
         SDL_SetWindowPosition(wnd, posX, posY);
+        SDL_SetWindowSize(wnd, window_width, window_height);
     }
-    SDL_SetWindowSize(wnd, window_width, window_height);
-    SDL_SetWindowFullscreen(
-        wnd,
-        on ? (CVarGetInteger("gSdlWindowedFullscreen", 0) ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) : 0);
+    if (SDL_SetWindowFullscreen(wnd, on ? (CVarGetInteger("gSdlWindowedFullscreen", 0) ? SDL_WINDOW_FULLSCREEN_DESKTOP
+                                                                                       : SDL_WINDOW_FULLSCREEN)
+                                        : 0) >= 0) {
+        fullscreen_state = on;
+    } else {
+        SPDLOG_ERROR("Failed to switch from or to fullscreen mode.");
+        SPDLOG_ERROR(SDL_GetError());
+    }
     SDL_SetCursor(SDL_DISABLE);
 
     if (on_fullscreen_changed_callback != NULL && call_callback) {
@@ -303,7 +319,12 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
 #endif
 
 #ifdef _WIN32
-    timer = CreateWaitableTimer(nullptr, false, nullptr);
+    // Use high-resolution timer by default on Windows 10 (so that NtSetTimerResolution (...) hacks are not needed)
+    timer = CreateWaitableTimerExW(nullptr, nullptr, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
+    // Fallback to low resolution timer if unsupported by the OS
+    if (timer == nullptr) {
+        timer = CreateWaitableTimer(nullptr, false, nullptr);
+    }
 #endif
 
     char title[512];
@@ -326,6 +347,12 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
 
     wnd = SDL_CreateWindow(title, posX, posY, window_width, window_height, flags);
     LUS::GuiWindowInitData window_impl;
+
+    int display_in_use = SDL_GetWindowDisplayIndex(wnd);
+    if (display_in_use < 0) { // Fallback to default if out of bounds
+        posX = 100;
+        posY = 100;
+    }
 
     if (use_opengl) {
 #ifndef __SWITCH__
@@ -514,7 +541,11 @@ static inline void sync_framerate_with_timer(void) {
     t = qpc_to_100ns(SDL_GetPerformanceCounter());
 
     const int64_t next = previous_time + 10 * FRAME_INTERVAL_US_NUMERATOR / FRAME_INTERVAL_US_DENOMINATOR;
-    const int64_t left = next - t;
+    int64_t left = next - t;
+#ifdef _WIN32
+    // We want to exit a bit early, so we can busy-wait the rest to never miss the deadline
+    left -= 15000UL;
+#endif
     if (left > 0) {
 #ifndef _WIN32
         const timespec spec = { 0, left * 100 };
@@ -528,6 +559,12 @@ static inline void sync_framerate_with_timer(void) {
 #endif
     }
 
+#ifdef _WIN32
+    do {
+        YieldProcessor(); // TODO: Find a way for other compilers, OSes and architectures
+        t = qpc_to_100ns(SDL_GetPerformanceCounter());
+    } while (t < next);
+#endif
     t = qpc_to_100ns(SDL_GetPerformanceCounter());
     if (left > 0 && t - next < 10000) {
         // In case it takes some time for the application to wake up after sleep,

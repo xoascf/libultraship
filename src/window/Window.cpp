@@ -63,6 +63,8 @@ void Window::Init() {
 
     mIsFullscreen =
         LUS::Context::GetInstance()->GetConfig()->GetBool("Window.Fullscreen.Enabled", false) || steamDeckGameMode;
+    mPosX = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.PositionX", mPosX);
+    mPosY = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.PositionY", mPosY);
 
     if (mIsFullscreen) {
         mWidth = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Width",
@@ -72,8 +74,6 @@ void Window::Init() {
     } else {
         mWidth = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.Width", 640);
         mHeight = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.Height", 480);
-        mPosX = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.PositionX", mPosX);
-        mPosY = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.PositionY", mPosY);
     }
 
     mAvailableWindowBackends = std::make_shared<std::vector<WindowBackend>>();
@@ -249,12 +249,6 @@ void Window::InitWindowManager() {
             break;
 #endif
 #if defined(ENABLE_OPENGL) || defined(__APPLE__)
-#if defined(__linux__) && defined(X11_SUPPORTED)
-        case WindowBackend::GLX_OPENGL:
-            mRenderingApi = &gfx_opengl_api;
-            mWindowManagerApi = &gfx_glx;
-            break;
-#endif
         case WindowBackend::SDL_OPENGL:
             mRenderingApi = &gfx_opengl_api;
             mWindowManagerApi = &gfx_sdl;
