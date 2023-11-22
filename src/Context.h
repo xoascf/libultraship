@@ -25,6 +25,7 @@ class Window;
 class Config;
 class ResourceManager;
 class FileDropMgr;
+class SpeechSynthesizer;
 
 class Context {
   public:
@@ -59,6 +60,7 @@ class Context {
     std::shared_ptr<CrashHandler> GetCrashHandler();
     std::shared_ptr<Window> GetWindow();
     std::shared_ptr<Console> GetConsole();
+    std::shared_ptr<SpeechSynthesizer> GetSpeechSynthesizer();
     std::shared_ptr<Audio> GetAudio();
     std::shared_ptr<Fast::GfxDebugger> GetGfxDebugger();
     std::shared_ptr<FileDropMgr> GetFileDropMgr();
@@ -78,6 +80,7 @@ class Context {
     bool InitConsole();
     bool InitWindow(std::shared_ptr<Window> window = nullptr);
     bool InitFileDropMgr();
+    bool InitSpeechSynthesis();
 
   protected:
     Context() = default;
@@ -93,6 +96,7 @@ class Context {
     std::shared_ptr<CrashHandler> mCrashHandler;
     std::shared_ptr<Window> mWindow;
     std::shared_ptr<Console> mConsole;
+    std::shared_ptr<SpeechSynthesizer> mSpeechSynthesizer;
     std::shared_ptr<Audio> mAudio;
     std::shared_ptr<Fast::GfxDebugger> mGfxDebugger;
     std::shared_ptr<FileDropMgr> mFileDropMgr;

@@ -10,6 +10,7 @@
 #include "controller/controldeck/ControlDeck.h"
 #include "debug/CrashHandler.h"
 #include "window/FileDropMgr.h"
+#include "speechsynthesizer/SpeechSynthesizer.h"
 
 #ifdef _WIN32
 #include <libloaderapi.h>
@@ -36,6 +37,7 @@ Context::~Context() {
 
     // Explicitly destructing everything so that logging is done last.
     mAudio = nullptr;
+    mSpeechSynthesizer = nullptr;
     mWindow = nullptr;
     mConsole = nullptr;
     mCrashHandler = nullptr;
@@ -90,7 +92,7 @@ bool Context::Init(const std::vector<std::string>& archivePaths, const std::unor
                    std::shared_ptr<ControlDeck> controlDeck) {
     return InitLogging() && InitConfiguration() && InitConsoleVariables() &&
            InitResourceManager(archivePaths, validHashes, reservedThreadCount) && InitControlDeck(controlDeck) &&
-           InitCrashHandler() && InitConsole() && InitWindow(window) && InitAudio(audioSettings) && InitGfxDebugger() &&
+           InitCrashHandler() && InitConsole() && InitWindow(window) && InitSpeechSynthesis() && InitAudio(audioSettings) && InitGfxDebugger() &&
            InitFileDropMgr();
 }
 
@@ -345,6 +347,17 @@ bool Context::InitFileDropMgr() {
     return true;
 }
 
+bool Context::InitSpeechSynthesis() {
+#ifdef __APPLE__
+    mSpeechSynthesizer = std::make_shared<DarwinSpeechSynthesizer>();
+#elif defined(_WIN32)
+    mSpeechSynthesizer = std::make_shared<SAPISpeechSynthesizer>();
+#else
+    mSpeechSynthesizer = nullptr;
+#endif
+    return (mSpeechSynthesizer != nullptr);
+}
+
 std::shared_ptr<ConsoleVariable> Context::GetConsoleVariables() {
     return mConsoleVariables;
 }
@@ -379,6 +392,10 @@ std::shared_ptr<Console> Context::GetConsole() {
 
 std::shared_ptr<Audio> Context::GetAudio() {
     return mAudio;
+}
+
+std::shared_ptr<SpeechSynthesizer> Context::GetSpeechSynthesizer() {
+    return mSpeechSynthesizer;
 }
 
 std::shared_ptr<Fast::GfxDebugger> Context::GetGfxDebugger() {
