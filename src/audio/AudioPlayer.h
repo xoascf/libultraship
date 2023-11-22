@@ -31,6 +31,8 @@ class AudioPlayer {
 
 #ifdef _WIN32
 #include "WasapiAudioPlayer.h"
+#elif defined(__linux)
+#include "PulseAudioPlayer.h"
 #endif
 
 #include "SDLAudioPlayer.h"
