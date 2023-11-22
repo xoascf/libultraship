@@ -85,6 +85,7 @@ void Context::Init(const std::vector<std::string>& otrFiles, const std::unordere
     InitCrashHandler();
     InitConsole();
     InitWindow();
+    InitSpeechSynthesis();
     InitAudio();
 }
 
@@ -265,6 +266,14 @@ void Context::InitWindow(std::shared_ptr<GuiWindow> customInputEditorWindow) {
     GetWindow()->Init();
 }
 
+void Context::InitSpeechSynthesis() {
+#ifdef __APPLE__
+    mSpeechSynthesizer = std::make_shared<DarwinSpeechSynthesizer>();
+#elif defined(_WIN32)
+    mSpeechSynthesizer = std::make_shared<SAPISpeechSynthesizer>();
+#endif
+}
+
 std::shared_ptr<ConsoleVariable> Context::GetConsoleVariables() {
     return mConsoleVariables;
 }
@@ -299,6 +308,10 @@ std::shared_ptr<Console> Context::GetConsole() {
 
 std::shared_ptr<Audio> Context::GetAudio() {
     return mAudio;
+}
+
+std::shared_ptr<SpeechSynthesizer> Context::GetSpeechSynthesizer() {
+    return mSpeechSynthesizer;
 }
 
 std::string Context::GetConfigFilePath() {
