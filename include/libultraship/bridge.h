@@ -7,5 +7,6 @@
 #include "public/bridge/windowbridge.h"
 #include "public/bridge/consolevariablebridge.h"
 #include "public/bridge/crashhandlerbridge.h"
+#include "public/bridge/speechsynthesizerbridge.h"
 
 #endif
