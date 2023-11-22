@@ -11,6 +11,7 @@
 #include "controller/controldeck/ControlDeck.h"
 #include "debug/CrashHandler.h"
 #include "audio/Audio.h"
+#include "speechsynthesizer/SpeechSynthesizer.h"
 #include "window/Window.h"
 #include "config/ConsoleVariable.h"
 #include "debug/Console.h"
@@ -51,6 +52,7 @@ class Context {
     std::shared_ptr<CrashHandler> GetCrashHandler();
     std::shared_ptr<Window> GetWindow();
     std::shared_ptr<Console> GetConsole();
+    std::shared_ptr<SpeechSynthesizer> GetSpeechSynthesizer();
     std::shared_ptr<Audio> GetAudio();
     std::shared_ptr<Fast::GfxDebugger> GetGfxDebugger();
 
@@ -68,6 +70,7 @@ class Context {
     bool InitGfxDebugger();
     bool InitConsole();
     bool InitWindow(std::shared_ptr<Window> window = nullptr);
+    bool InitSpeechSynthesis();
 
   protected:
     Context() = default;
@@ -83,6 +86,7 @@ class Context {
     std::shared_ptr<CrashHandler> mCrashHandler;
     std::shared_ptr<Window> mWindow;
     std::shared_ptr<Console> mConsole;
+    std::shared_ptr<SpeechSynthesizer> mSpeechSynthesizer;
     std::shared_ptr<Audio> mAudio;
     std::shared_ptr<Fast::GfxDebugger> mGfxDebugger;
 

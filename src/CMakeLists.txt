@@ -163,6 +163,25 @@ source_group("graphic_debug" FILES ${Source_Files__Graphic_Debug})
 target_sources(libultraship PRIVATE ${Source_Files__Graphic})
 target_sources(libultraship PRIVATE ${Source_Files__Graphic_Debug})
 
+#=================== Speech Synthesizer ===================
+
+set(Source_Files__SpeechSynthesizer
+    ${CMAKE_CURRENT_SOURCE_DIR}/speechsynthesizer/SpeechSynthesizer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/speechsynthesizer/SpeechSynthesizer.cpp
+)
+
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    list(APPEND Source_Files__SpeechSynthesizer ${CMAKE_CURRENT_SOURCE_DIR}/speechsynthesizer/DarwinSpeechSynthesizer.h)
+    list(APPEND Source_Files__SpeechSynthesizer ${CMAKE_CURRENT_SOURCE_DIR}/speechsynthesizer/DarwinSpeechSynthesizer.mm)
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    list(APPEND Source_Files__SpeechSynthesizer ${CMAKE_CURRENT_SOURCE_DIR}/speechsynthesizer/SAPISpeechSynthesizer.h)
+    list(APPEND Source_Files__SpeechSynthesizer ${CMAKE_CURRENT_SOURCE_DIR}/speechsynthesizer/SAPISpeechSynthesizer.cpp)
+endif()
+
+source_group("SpeechSynthesizer" FILES ${Source_Files__SpeechSynthesizer})
+
+target_sources(libultraship PRIVATE ${Source_Files__SpeechSynthesizer})
+
 #=================== Packages & Includes ===================
 
 target_include_directories(libultraship

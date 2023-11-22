@@ -84,7 +84,7 @@ bool Context::Init(const std::vector<std::string>& archivePaths, const std::unor
                    std::shared_ptr<ControlDeck> controlDeck) {
     return InitLogging() && InitConfiguration() && InitConsoleVariables() &&
            InitResourceManager(archivePaths, validHashes, reservedThreadCount) && InitControlDeck(controlDeck) &&
-           InitCrashHandler() && InitConsole() && InitWindow(window) && InitAudio(audioSettings) && InitGfxDebugger();
+           InitCrashHandler() && InitConsole() && InitWindow(window) && InitSpeechSynthesis() && InitAudio(audioSettings) && InitGfxDebugger();
 }
 
 bool Context::InitLogging() {
@@ -325,6 +325,17 @@ bool Context::InitWindow(std::shared_ptr<Window> window) {
     return true;
 }
 
+bool Context::InitSpeechSynthesis() {
+#ifdef __APPLE__
+    mSpeechSynthesizer = std::make_shared<DarwinSpeechSynthesizer>();
+#elif defined(_WIN32)
+    mSpeechSynthesizer = std::make_shared<SAPISpeechSynthesizer>();
+#else
+    mSpeechSynthesizer = nullptr;
+#endif
+    return (mSpeechSynthesizer != nullptr);
+}
+
 std::shared_ptr<ConsoleVariable> Context::GetConsoleVariables() {
     return mConsoleVariables;
 }
@@ -359,6 +370,10 @@ std::shared_ptr<Console> Context::GetConsole() {
 
 std::shared_ptr<Audio> Context::GetAudio() {
     return mAudio;
+}
+
+std::shared_ptr<SpeechSynthesizer> Context::GetSpeechSynthesizer() {
+    return mSpeechSynthesizer;
 }
 
 std::shared_ptr<Fast::GfxDebugger> Context::GetGfxDebugger() {
