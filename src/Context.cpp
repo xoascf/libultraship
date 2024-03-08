@@ -331,7 +331,7 @@ bool Context::InitSpeechSynthesis() {
 #elif defined(_WIN32)
     mSpeechSynthesizer = std::make_shared<SAPISpeechSynthesizer>();
 #else
-    mSpeechSynthesizer = nullptr;
+    mSpeechSynthesizer = std::make_shared<SpeechLogger>();
 #endif
     return (mSpeechSynthesizer != nullptr);
 }
