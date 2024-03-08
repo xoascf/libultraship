@@ -443,6 +443,8 @@ target_sources(libultraship PRIVATE ${Source_Files__Graphic})
 set(Source_Files__SpeechSynthesizer
     ${CMAKE_CURRENT_SOURCE_DIR}/speechsynthesizer/SpeechSynthesizer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/speechsynthesizer/SpeechSynthesizer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/speechsynthesizer/SpeechLogger.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/speechsynthesizer/SpeechLogger.cpp
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")

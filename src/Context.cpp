@@ -271,6 +271,8 @@ void Context::InitSpeechSynthesis() {
     mSpeechSynthesizer = std::make_shared<DarwinSpeechSynthesizer>();
 #elif defined(_WIN32)
     mSpeechSynthesizer = std::make_shared<SAPISpeechSynthesizer>();
+#else
+    mSpeechSynthesizer = std::make_shared<SpeechLogger>();
 #endif
 }
 
