@@ -67,7 +67,7 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARA
 
 #endif
 
-namespace LUS {
+namespace Ship {
 #define TOGGLE_BTN ImGuiKey_F1
 #define TOGGLE_PAD_BTN ImGuiKey_GamepadBack
 
@@ -85,7 +85,7 @@ Gui::Gui(std::shared_ptr<GuiWindow> customInputEditorWindow) : mNeedsConsoleVari
     AddGuiWindow(
         std::make_shared<ControllerReorderingWindow>("gControllerReorderingWindowEnabled", "Controller Reordering"));
     AddGuiWindow(std::make_shared<ConsoleWindow>("gConsoleEnabled", "Console"));
-    AddGuiWindow(std::make_shared<GfxDebuggerWindow>("gGfxDebuggerEnabled", "GfxDebuggerWindow"));
+    AddGuiWindow(std::make_shared<LUS::GfxDebuggerWindow>("gGfxDebuggerEnabled", "GfxDebuggerWindow"));
 }
 
 Gui::Gui() : Gui(nullptr) {
@@ -119,7 +119,7 @@ void Gui::Init(GuiWindowInitData windowImpl) {
                                                           &iconsConfig, sIconsRanges);
 
 #ifdef __SWITCH__
-    LUS::Switch::ImGuiSetupFont(mImGuiIo->Fonts);
+    Ship::Switch::ImGuiSetupFont(mImGuiIo->Fonts);
 #endif
 
 #if defined(__ANDROID__)
@@ -137,8 +137,8 @@ void Gui::Init(GuiWindowInitData windowImpl) {
     mImGuiIo->DisplaySize.x = mImpl.Gx2.Width;
     mImGuiIo->DisplaySize.y = mImpl.Gx2.Height;
 #endif
-    auto imguiIniPath = LUS::Context::GetPathRelativeToAppDirectory("imgui.ini");
-    auto imguiLogPath = LUS::Context::GetPathRelativeToAppDirectory("imgui_log.txt");
+    auto imguiIniPath = Ship::Context::GetPathRelativeToAppDirectory("imgui.ini");
+    auto imguiLogPath = Ship::Context::GetPathRelativeToAppDirectory("imgui_log.txt");
     mImGuiIo->IniFilename = strcpy(new char[imguiIniPath.length() + 1], imguiIniPath.c_str());
     mImGuiIo->LogFilename = strcpy(new char[imguiLogPath.length() + 1], imguiLogPath.c_str());
 
@@ -294,10 +294,10 @@ void Gui::Update(WindowEvent event) {
             ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.Sdl.Event));
 
 #ifdef __SWITCH__
-            LUS::Switch::ImGuiProcessEvent(mImGuiIo->WantTextInput);
+            Ship::Switch::ImGuiProcessEvent(mImGuiIo->WantTextInput);
 #endif
 #ifdef __ANDROID__
-            LUS::Android::ImGuiProcessEvent(mImGuiIo->WantTextInput);
+            Ship::Android::ImGuiProcessEvent(mImGuiIo->WantTextInput);
 #endif
             break;
 #endif
@@ -327,7 +327,7 @@ void Gui::UnblockImGuiGamepadNavigation() {
 }
 
 void Gui::DrawMenu() {
-    LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console")->Update();
+    Ship::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console")->Update();
     ImGuiBackendNewFrame();
     ImGuiWMNewFrame();
     ImGui::NewFrame();
@@ -386,15 +386,15 @@ void Gui::DrawMenu() {
 #if __APPLE__
     if ((ImGui::IsKeyDown(ImGuiKey_LeftSuper) || ImGui::IsKeyDown(ImGuiKey_RightSuper)) &&
         ImGui::IsKeyPressed(ImGuiKey_R, false)) {
-        std::reinterpret_pointer_cast<LUS::ConsoleWindow>(
-            LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))
+        std::reinterpret_pointer_cast<Ship::ConsoleWindow>(
+            Ship::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))
             ->Dispatch("reset");
     }
 #else
     if ((ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl)) &&
         ImGui::IsKeyPressed(ImGuiKey_R, false)) {
-        std::reinterpret_pointer_cast<LUS::ConsoleWindow>(
-            LUS::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))
+        std::reinterpret_pointer_cast<Ship::ConsoleWindow>(
+            Ship::Context::GetInstance()->GetWindow()->GetGui()->GetGuiWindow("Console"))
             ->Dispatch("reset");
     }
 #endif
@@ -953,4 +953,4 @@ void Gui::SetMenuBar(std::shared_ptr<GuiMenuBar> menuBar) {
 std::shared_ptr<GuiMenuBar> Gui::GetMenuBar() {
     return mMenuBar;
 }
-} // namespace LUS
+} // namespace Ship

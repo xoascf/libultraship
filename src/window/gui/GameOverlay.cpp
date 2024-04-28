@@ -11,7 +11,7 @@
 
 #include "../../graphic/Fast3D/wininfo.h"
 
-namespace LUS {
+namespace Ship {
 GameOverlay::GameOverlay() {
 }
 
@@ -234,4 +234,4 @@ void GameOverlay::Draw() {
 
     ImGui::End();
 }
-} // namespace LUS
+} // namespace Ship
