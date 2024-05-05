@@ -1,15 +1,5 @@
 #include <stdio.h>
 
-#include "glad/gl.h"
-
-#ifndef __SWITCH__
-#include "libultraship/libultraship.h"
-#else
-// including libultraship.h on switch leads to conflicting typedefs for u64 and s64
-// so we need to just include classes.h instead here
-#include "libultraship/classes.h"
-#endif
-
 #if defined(ENABLE_OPENGL) || defined(__APPLE__) || true
 
 #ifdef __MINGW32__
@@ -20,6 +10,9 @@
 
 #if FOR_WINDOWS or true
 #include <glad/gl.h>
+#include "Context.h"
+#include "config/ConsoleVariable.h"
+
 #include "SDL.h"
 #define GL_GLEXT_PROTOTYPES 1
 #include "SDL_opengl.h"

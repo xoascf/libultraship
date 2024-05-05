@@ -16,8 +16,6 @@
 #include <d3d12.h>
 #include <d3dcompiler.h>
 
-#include "libultraship/libultraship.h"
-
 #ifndef _LANGUAGE_C
 #define _LANGUAGE_C
 #endif
@@ -30,6 +28,8 @@
 
 #include "gfx_screen_config.h"
 #include "window/gui/Gui.h"
+#include "Context.h"
+#include "config/ConsoleVariable.h"
 
 #include "gfx_cc.h"
 #include "gfx_rendering_api.h"

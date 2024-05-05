@@ -22,7 +22,10 @@
 #ifndef _LANGUAGE_C
 #define _LANGUAGE_C
 #endif
-#include "libultraship/libultraship.h"
+
+#include "config/ConsoleVariable.h"
+#include "config/Config.h"
+#include "Context.h"
 
 #include "gfx_window_manager_api.h"
 #include "gfx_rendering_api.h"
