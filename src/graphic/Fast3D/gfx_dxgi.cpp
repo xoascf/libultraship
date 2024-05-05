@@ -15,6 +15,7 @@
 #include <dxgi1_5.h>
 #include <versionhelpers.h>
 #include <d3d11.h>
+#include <d3d12.h>
 
 #include <shellscalingapi.h>
 
@@ -31,6 +32,8 @@
 
 #define DECLARE_GFX_DXGI_FUNCTIONS
 #include "gfx_dxgi.h"
+
+#include "wininfo.h"
 
 #define WINCLASS_NAME L"N64GAME"
 #define GFX_BACKEND_NAME "DXGI"
@@ -178,6 +181,10 @@ bool GetMonitorAtCoords(std::vector<std::tuple<HMONITOR, RECT, BOOL>> MonitorLis
 }
 
 static void toggle_borderless_window_full_screen(bool enable, bool call_callback) {
+    // TODO: preproc
+    if (true)
+        return;
+
     // Windows 7 + flip mode + waitable object can't go to exclusive fullscreen,
     // so do borderless instead. If DWM is enabled, this means we get one monitor
     // sync interval of latency extra. On Win 10 however (maybe Win 8 too), due to
@@ -387,13 +394,15 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
         dxgi.timer = CreateWaitableTimer(nullptr, FALSE, nullptr);
     }
 
+// TODO: preproc defs
+// No window for uwp
     // Prepare window title
-
     char title[512];
     wchar_t w_title[512];
     int len = sprintf(title, "%s (%s)", game_name, gfx_api_name);
     mbstowcs(w_title, title, len + 1);
     dxgi.game_name = game_name;
+/*
 
     // Create window
     WNDCLASSEXW wcex;
@@ -434,6 +443,15 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
 
     ShowWindow(dxgi.h_wnd, SW_SHOW);
     UpdateWindow(dxgi.h_wnd);
+*/
+    dxgi.current_height = 1080;
+    dxgi.current_width = 1920;
+    dxgi.monitor_list = GetMonitorList();
+    dxgi.posX = 0;
+    dxgi.posY = 0;
+    dxgi.h_wnd = reinterpret_cast<HWND>( WinInfo::getCurrentWindow() );
+    load_dxgi_library();
+    //UpdateWindow(dxgi.h_wnd);
 
     // Get refresh rate
     GetMonitorHzPeriod(dxgi.h_Monitor, dxgi.detected_hz, dxgi.display_period);
@@ -442,7 +460,7 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
         toggle_borderless_window_full_screen(true, false);
     }
 
-    DragAcceptFiles(dxgi.h_wnd, TRUE);
+    //DragAcceptFiles(dxgi.h_wnd, TRUE);
 }
 
 static void gfx_dxgi_close() {
@@ -676,6 +694,7 @@ static bool gfx_dxgi_start_frame(void) {
 }
 
 static void gfx_dxgi_swap_buffers_begin(void) {
+    /*
     LARGE_INTEGER t;
     dxgi.use_timer = true;
     if (dxgi.use_timer || (dxgi.tearing_support && !dxgi.is_vsync_enabled)) {
@@ -696,7 +715,13 @@ static void gfx_dxgi_swap_buffers_begin(void) {
         int64_t next = qpc_to_100ns(dxgi.previous_present_time.QuadPart) +
                        FRAME_INTERVAL_NS_NUMERATOR / (FRAME_INTERVAL_NS_DENOMINATOR * 100);
         int64_t left = next - qpc_to_100ns(t.QuadPart) - 15000UL;
+
         if (left > 0) {
+            // Protection for qpc shift
+            if (left > 20000) {
+                left = 16666;
+            }
+
             LARGE_INTEGER li;
             li.QuadPart = -left;
             SetWaitableTimer(dxgi.timer, &li, 0, nullptr, nullptr, false);
@@ -706,6 +731,12 @@ static void gfx_dxgi_swap_buffers_begin(void) {
                 YieldProcessor();
                 QueryPerformanceCounter(&t);
                 t.QuadPart = qpc_to_100ns(t.QuadPart);
+
+                // Protection for xbox and other platforms where output from qpc can shift
+                if ((t.QuadPart + 15000UL) < next) {
+                    //dxgi.qpc_init = t.QuadPart;
+                    break;
+                }
             } while (t.QuadPart < next);
         }
     }
@@ -723,9 +754,16 @@ static void gfx_dxgi_swap_buffers_begin(void) {
         dxgi.pending_frame_stats.insert(std::make_pair(this_present_id, dxgi.length_in_vsync_frames));
     }
     dxgi.dropped_frame = false;
+    */
+    LARGE_INTEGER t;
+    QueryPerformanceCounter(&t);
+    dxgi.previous_present_time = t;
+    dxgi.dropped_frame = false;
+    dxgi.swap_chain->Present(1, 0);
 }
 
 static void gfx_dxgi_swap_buffers_end(void) {
+    /*
     LARGE_INTEGER t0, t1, t2;
     QueryPerformanceCounter(&t0);
     QueryPerformanceCounter(&t1);
@@ -757,17 +795,19 @@ static void gfx_dxgi_swap_buffers_end(void) {
         // else TODO: maybe sleep until some estimated time the frame will be shown to reduce lag
     }
 
-    DXGI_FRAME_STATISTICS stats;
-    dxgi.swap_chain->GetFrameStatistics(&stats);
+        QueryPerformanceCounter(&t2);
 
-    QueryPerformanceCounter(&t2);
-
-    dxgi.zero_latency = dxgi.pending_frame_stats.rbegin()->first == stats.PresentCount;
+    //dxgi.zero_latency = dxgi.pending_frame_stats.rbegin()->first == stats.PresentCount;
 
     // printf(L"done %I64u gpu:%d wait:%d freed:%I64u frame:%u %u monitor:%u t:%I64u\n", (unsigned long
     // long)(t0.QuadPart - dxgi.qpc_init), (int)(t1.QuadPart - t0.QuadPart), (int)(t2.QuadPart - t0.QuadPart), (unsigned
     // long long)(t2.QuadPart - dxgi.qpc_init), dxgi.pending_frame_stats.rbegin()->first, stats.PresentCount,
     // stats.SyncRefreshCount, (unsigned long long)(stats.SyncQPCTime.QuadPart - dxgi.qpc_init));
+    */
+    DXGI_FRAME_STATISTICS stats;
+    dxgi.swap_chain->GetFrameStatistics(&stats);
+
+
 }
 
 static double gfx_dxgi_get_time(void) {
@@ -831,8 +871,8 @@ void gfx_dxgi_create_swap_chain(IUnknown* device, std::function<void()>&& before
 
     DXGI_SWAP_CHAIN_DESC1 swap_chain_desc = {};
     swap_chain_desc.BufferCount = 3;
-    swap_chain_desc.Width = 0;
-    swap_chain_desc.Height = 0;
+    swap_chain_desc.Width = 1920;
+    swap_chain_desc.Height = 1080;
     swap_chain_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     swap_chain_desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     swap_chain_desc.Scaling = win8 ? DXGI_SCALING_NONE : DXGI_SCALING_STRETCH;
@@ -845,9 +885,16 @@ void gfx_dxgi_create_swap_chain(IUnknown* device, std::function<void()>&& before
     }
     swap_chain_desc.SampleDesc.Count = 1;
 
+// TODO: Needs proper preprocessor definition
+    /*
     ThrowIfFailed(
         dxgi.factory->CreateSwapChainForHwnd(device, dxgi.h_wnd, &swap_chain_desc, nullptr, nullptr, &dxgi.swap_chain));
     ThrowIfFailed(dxgi.factory->MakeWindowAssociation(dxgi.h_wnd, DXGI_MWA_NO_ALT_ENTER));
+    */
+
+    ThrowIfFailed(dxgi.factory->CreateSwapChainForCoreWindow(device, static_cast<::IUnknown*>(WinInfo::getCurrentWindow()), &swap_chain_desc,
+                                                             nullptr, &dxgi.swap_chain)
+    );
 
     apply_maximum_frame_latency(true);
 
@@ -883,7 +930,7 @@ void ThrowIfFailed(HRESULT res, HWND h_wnd, const char* message) {
 
 const char* gfx_dxgi_get_key_name(int scancode) {
     static char text[64];
-    GetKeyNameTextA(scancode << 16, text, 64);
+    //GetKeyNameTextA(scancode << 16, text, 64);
     return text;
 }
 

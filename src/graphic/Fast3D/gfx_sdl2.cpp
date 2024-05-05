@@ -1,5 +1,7 @@
 #include <stdio.h>
 
+#include "glad/gl.h"
+
 #ifndef __SWITCH__
 #include "libultraship/libultraship.h"
 #else
@@ -8,7 +10,7 @@
 #include "libultraship/classes.h"
 #endif
 
-#if defined(ENABLE_OPENGL) || defined(__APPLE__)
+#if defined(ENABLE_OPENGL) || defined(__APPLE__) || true
 
 #ifdef __MINGW32__
 #define FOR_WINDOWS 1
@@ -16,8 +18,8 @@
 #define FOR_WINDOWS 0
 #endif
 
-#if FOR_WINDOWS
-#include <GL/glew.h>
+#if FOR_WINDOWS or true
+#include <glad/gl.h>
 #include "SDL.h"
 #define GL_GLEXT_PROTOTYPES 1
 #include "SDL_opengl.h"
@@ -34,6 +36,8 @@
 #define GL_GLEXT_PROTOTYPES 1
 #include <SDL2/SDL_opengles2.h>
 #endif
+
+#include "wininfo.h"
 
 #include "window/gui/Gui.h"
 #include "public/bridge/consolevariablebridge.h"
@@ -273,11 +277,15 @@ static void set_fullscreen(bool on, bool call_callback) {
 }
 
 static void gfx_sdl_get_active_window_refresh_rate(uint32_t* refresh_rate) {
+    *refresh_rate = (int) WinInfo::getHostRefresh();
+
+    /*
     int display_in_use = SDL_GetWindowDisplayIndex(wnd);
 
     SDL_DisplayMode mode;
     SDL_GetCurrentDisplayMode(display_in_use, &mode);
     *refresh_rate = mode.refresh_rate;
+    */
 }
 
 static uint64_t previous_time;
@@ -337,6 +345,10 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+#else
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
 #endif
 
 #ifdef _WIN32
@@ -367,7 +379,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
     }
 
     wnd = SDL_CreateWindow(title, posX, posY, window_width, window_height, flags);
-#ifdef _WIN32
+#if _WIN32
     // Get Windows window handle and use it to subclass the window procedure.
     // Needed to circumvent SDLs DPI scaling problems under windows (original does only scale *sometimes*).
     SDL_SysWMinfo wmInfo;
@@ -385,6 +397,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
     }
 
     if (use_opengl) {
+        
 #ifndef __SWITCH__
         SDL_GL_GetDrawableSize(wnd, &window_width, &window_height);
 
@@ -394,6 +407,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
 #endif
 
         ctx = SDL_GL_CreateContext(wnd);
+        
 
 #ifdef __SWITCH__
         if (!gladLoadGLLoader(SDL_GL_GetProcAddress)) {
@@ -574,12 +588,31 @@ static uint64_t qpc_to_100ns(uint64_t qpc) {
     return qpc / qpc_freq;
 }
 
+// I don't fully grok the QPC issues on UWP, supposedly negative values can come back and other times there's just large drift
+// The code below won't work in 2038. If nobody has changed it by then just subtract a large arbitray value from the epoch :D
+static inline uint64_t safe_counter() {
+    int64_t count = 0;
+    do {
+        count = SDL_GetPerformanceCounter();
+    } while (count < 0);
+
+    return (uint64_t)count;
+
+}
+
 static inline void sync_framerate_with_timer(void) {
     uint64_t t;
-    t = qpc_to_100ns(SDL_GetPerformanceCounter());
+    t = qpc_to_100ns(safe_counter());
 
     const int64_t next = previous_time + 10 * FRAME_INTERVAL_US_NUMERATOR / FRAME_INTERVAL_US_DENOMINATOR;
     int64_t left = next - t;
+    int64_t leftCopy = left;
+
+    // QPC protection for platforms where it can shift and lock the rendering with a huge sleep value
+    if (left > 20000) {
+        left = 16666;
+    }
+
 #ifdef _WIN32
     // We want to exit a bit early, so we can busy-wait the rest to never miss the deadline
     left -= 15000UL;
@@ -600,10 +633,15 @@ static inline void sync_framerate_with_timer(void) {
 #ifdef _WIN32
     do {
         YieldProcessor(); // TODO: Find a way for other compilers, OSes and architectures
-        t = qpc_to_100ns(SDL_GetPerformanceCounter());
+        t = qpc_to_100ns(safe_counter());
+
+        // Escape conditions for shifting QPC
+        if (next - t > leftCopy || t < previous_time)
+            break;
     } while (t < next);
 #endif
-    t = qpc_to_100ns(SDL_GetPerformanceCounter());
+    t = qpc_to_100ns(safe_counter());
+
     if (left > 0 && t - next < 10000) {
         // In case it takes some time for the application to wake up after sleep,
         // or inaccurate timer,
@@ -614,7 +652,12 @@ static inline void sync_framerate_with_timer(void) {
 }
 
 static void gfx_sdl_swap_buffers_begin(void) {
-    sync_framerate_with_timer();
+    if (abs(target_fps - WinInfo::getHostRefresh()) >= 1) { // Don't think we can use vsync_enabled here because it never changes
+        sync_framerate_with_timer();
+    } else {
+        previous_time = qpc_to_100ns(safe_counter()); // Need to update this in case user switches sync back on
+    }
+
     SDL_GL_SwapWindow(wnd);
 }
 

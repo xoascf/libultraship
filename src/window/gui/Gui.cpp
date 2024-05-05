@@ -29,6 +29,8 @@
 #include "graphic/Fast3D/gfx_gx2.h"
 #endif
 
+#include "graphic/Fast3D/wininfo.h"
+
 #ifdef __APPLE__
 #include <SDL_hints.h>
 #include <SDL_video.h>
@@ -94,6 +96,8 @@ Gui::~Gui() {
 }
 
 void Gui::Init(GuiWindowInitData windowImpl) {
+    SDL_Init(SDL_INIT_VIDEO);
+
     mImpl = windowImpl;
     ImGuiContext* ctx = ImGui::CreateContext();
     ImGui::SetCurrentContext(ctx);
@@ -133,7 +137,6 @@ void Gui::Init(GuiWindowInitData windowImpl) {
     mImGuiIo->DisplaySize.x = mImpl.Gx2.Width;
     mImGuiIo->DisplaySize.y = mImpl.Gx2.Height;
 #endif
-
     auto imguiIniPath = LUS::Context::GetPathRelativeToAppDirectory("imgui.ini");
     auto imguiLogPath = LUS::Context::GetPathRelativeToAppDirectory("imgui_log.txt");
     mImGuiIo->IniFilename = strcpy(new char[imguiIniPath.length() + 1], imguiIniPath.c_str());
@@ -258,6 +261,7 @@ void Gui::LoadTextureFromRawImage(const std::string& name, const std::string& pa
 }
 
 bool Gui::SupportsViewports() {
+    return false;
 #ifdef __SWITCH__
     return false;
 #endif
@@ -342,7 +346,8 @@ void Gui::DrawMenu() {
 
     const ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);
-    ImGui::SetNextWindowSize(ImVec2((int)wnd->GetWidth(), (int)wnd->GetHeight()));
+    // For some reason xbox pulls 1080 if you don't overide WxH here
+    ImGui::SetNextWindowSize(ImVec2(WinInfo::getHostWidth(), WinInfo::getHostHeight()));
     ImGui::SetNextWindowViewport(viewport->ID);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
@@ -366,6 +371,7 @@ void Gui::DrawMenu() {
     ImGui::DockSpace(dockId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None | ImGuiDockNodeFlags_NoDockingInCentralNode);
 
     if (ImGui::IsKeyPressed(TOGGLE_BTN) || (ImGui::IsKeyPressed(TOGGLE_PAD_BTN) && CVarGetInteger("gControlNav", 0))) {
+        SPDLOG_WARN("Menu toggled");
         GetMenuBar()->ToggleVisibility();
         if (wnd->IsFullscreen()) {
             Context::GetInstance()->GetWindow()->SetCursorVisibility(GetMenuBar() && GetMenuBar()->IsVisible());
@@ -422,8 +428,8 @@ void Gui::DrawMenu() {
     gfx_current_dimensions.height = (uint32_t)(size.y * gfx_current_dimensions.internal_mul);
     gfx_current_game_window_viewport.x = (int16_t)mainPos.x;
     gfx_current_game_window_viewport.y = (int16_t)mainPos.y;
-    gfx_current_game_window_viewport.width = (int16_t)size.x;
-    gfx_current_game_window_viewport.height = (int16_t)size.y;
+    gfx_current_game_window_viewport.width = (int16_t) size.x;
+    gfx_current_game_window_viewport.height = (int16_t) size.y;
 
     if (CVarGetInteger("gAdvancedResolution.Enabled", 0)) {
         ApplyResolutionChanges();
@@ -466,6 +472,7 @@ void Gui::ImGuiBackendNewFrame() {
 #else
         case WindowBackend::SDL_OPENGL:
             ImGui_ImplOpenGL3_NewFrame();
+#define GL_GLEXT_PROTOTYPES 1
             break;
 #endif
 #ifdef __APPLE__

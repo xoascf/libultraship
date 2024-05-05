@@ -4,8 +4,11 @@
 #include <spdlog/async.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/sinks/msvc_sink.h>
 #include "install_config.h"
 #include "debug/GfxDebugger.h"
+
+#include "graphic/Fast3D/wininfo.h"
 
 #ifdef _WIN32
 #include <tchar.h>
@@ -104,13 +107,16 @@ void Context::InitLogging() {
 #if defined(_DEBUG) && defined(_WIN32)
         // LLVM on Windows allocs a hidden console in its entrypoint function.
         // We free that console here to create our own.
+	/*
         FreeConsole();
         if (AllocConsole() == 0) {
             throw std::system_error(GetLastError(), std::generic_category(), "Failed to create debug console");
         }
+	*/
 
         SetConsoleOutputCP(CP_UTF8);
 
+        /*
         FILE* fDummy;
         freopen_s(&fDummy, "CONOUT$", "w", stdout);
         freopen_s(&fDummy, "CONOUT$", "w", stderr);
@@ -119,7 +125,9 @@ void Context::InitLogging() {
         std::clog.clear();
         std::cerr.clear();
         std::cin.clear();
+        */
 
+        /*
         HANDLE hConOut = CreateFile(_T("CONOUT$"), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
                                     NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
         HANDLE hConIn = CreateFile(_T("CONIN$"), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
@@ -131,13 +139,14 @@ void Context::InitLogging() {
         std::wclog.clear();
         std::wcerr.clear();
         std::wcin.clear();
+        */
 #endif
-        auto systemConsoleSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-        // systemConsoleSink->set_level(spdlog::level::trace);
+        auto systemConsoleSink = std::make_shared<spdlog::sinks::msvc_sink_mt>();
+        systemConsoleSink->set_level(spdlog::level::debug);
         sinks.push_back(systemConsoleSink);
 #endif
 
-#ifndef __WIIU__
+#if  !defined(__WIIU__) and false
         auto logPath = GetPathRelativeToAppDirectory(("logs/" + GetName() + ".log"));
         auto fileSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(logPath, 1024 * 1024 * 10, 10);
 #ifdef _DEBUG
@@ -389,7 +398,7 @@ std::string Context::GetAppDirectoryPath(std::string appName) {
     }
 #endif
 
-    return ".";
+    return WinInfo::getSavePath();
 }
 
 std::string Context::GetPathRelativeToAppBundle(const std::string path) {
@@ -413,6 +422,12 @@ std::string Context::LocateFileAcrossAppDirs(const std::string path, std::string
     if (std::filesystem::exists(fpath)) {
         return fpath;
     }
+    // E drive
+    fpath = "E:\\soh\\" + path;
+    if (std::filesystem::exists(fpath)) {
+        return fpath;
+    }
+
     // current dir
     return "./" + std::string(path);
 }
