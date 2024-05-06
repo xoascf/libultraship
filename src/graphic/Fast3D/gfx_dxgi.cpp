@@ -363,9 +363,10 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             break;
         case WM_DROPFILES:
             DragQueryFileA((HDROP)w_param, 0, fileName, 256);
-            CVarSetString(CVAR_DROPPED_FILE, fileName);
-            CVarSetInteger(CVAR_NEW_FILE_DROPPED, 1);
-            CVarSave();
+            Ship::Context::GetInstance()->GetConsoleVariables()->GetString(CVAR_DROPPED_FILE, fileName);
+            Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_NEW_FILE_DROPPED, 1);
+            Ship::Context::GetInstance()->GetConsoleVariables()->Save();
+
             break;
         case WM_DISPLAYCHANGE:
             dxgi.monitor_list = GetMonitorList();
@@ -400,6 +401,7 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
 // TODO: preproc defs
 // No window for uwp
     // Prepare window title
+
     char title[512];
     wchar_t w_title[512];
     int len = sprintf(title, "%s (%s)", game_name, gfx_api_name);
@@ -688,9 +690,11 @@ static bool gfx_dxgi_start_frame(void) {
     // dxgi.length_in_vsync_frames is used as present interval. Present interval >1 (aka fractional V-Sync)
     // breaks VRR and introduces even more input lag than capping via normal V-Sync does.
     // Get the present interval the user wants instead (V-Sync toggle).
-    if (dxgi.is_vsync_enabled != CVarGetInteger(CVAR_VSYNC_ENABLED, 1)) {
+    if (dxgi.is_vsync_enabled !=
+        Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1)) {
         // Make sure only 0 or 1 is set, as present interval technically accepts a range from 0 to 4.
-        dxgi.is_vsync_enabled = !!CVarGetInteger(CVAR_VSYNC_ENABLED, 1);
+        dxgi.is_vsync_enabled =
+            !!Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1);
     }
     dxgi.length_in_vsync_frames = dxgi.is_vsync_enabled;
     return true;
@@ -718,7 +722,6 @@ static void gfx_dxgi_swap_buffers_begin(void) {
         int64_t next = qpc_to_100ns(dxgi.previous_present_time.QuadPart) +
                        FRAME_INTERVAL_NS_NUMERATOR / (FRAME_INTERVAL_NS_DENOMINATOR * 100);
         int64_t left = next - qpc_to_100ns(t.QuadPart) - 15000UL;
-
         if (left > 0) {
             // Protection for qpc shift
             if (left > 20000) {

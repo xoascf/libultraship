@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.24.0)
 
 option(NON_PORTABLE "Build a non-portable version" OFF)
-
+add_definitions(-D_SILENCE_ALL_MS_EXT_DEPRECATION_WARNINGS)
 project(libultraship LANGUAGES C CXX)
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     enable_language(OBJCXX)
@@ -27,7 +27,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows" AND USE_AUTO_VCPKG)
 	endif()
 
     vcpkg_bootstrap()
-    vcpkg_install_packages(zlib bzip2 sdl2 glew libzip)
+    vcpkg_install_packages(zlib bzip2 sdl2 glew libzip tinyxml2)
 endif()
 
 add_subdirectory("extern")
