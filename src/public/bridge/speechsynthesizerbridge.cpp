@@ -5,7 +5,7 @@
 extern "C" {
 
 bool SpeechSynthesizerInit(void) {
-    auto speechSynthesizer = LUS::Context::GetInstance()->GetSpeechSynthesizer();
+    auto speechSynthesizer = Ship::Context::GetInstance()->GetSpeechSynthesizer();
     if (speechSynthesizer == nullptr) {
         return false;
     }
@@ -18,7 +18,7 @@ bool SpeechSynthesizerInit(void) {
 }
 
 void SpeechSynthesizerUninitialize(void) {
-    auto speechSynthesizer = LUS::Context::GetInstance()->GetSpeechSynthesizer();
+    auto speechSynthesizer = Ship::Context::GetInstance()->GetSpeechSynthesizer();
     if (speechSynthesizer == nullptr) {
         return;
     }
@@ -27,7 +27,7 @@ void SpeechSynthesizerUninitialize(void) {
 }
 
 void SpeechSynthesizerSpeak(const char* text, const char* language) {
-    auto speechSynthesizer = LUS::Context::GetInstance()->GetSpeechSynthesizer();
+    auto speechSynthesizer = Ship::Context::GetInstance()->GetSpeechSynthesizer();
     if (speechSynthesizer == nullptr) {
         return;
     }
@@ -37,7 +37,7 @@ void SpeechSynthesizerSpeak(const char* text, const char* language) {
 }
 
 void SpeechSynthesizerSpeak(std::string text, const char* language) {
-    auto speechSynthesizer = LUS::Context::GetInstance()->GetSpeechSynthesizer();
+    auto speechSynthesizer = Ship::Context::GetInstance()->GetSpeechSynthesizer();
     if (speechSynthesizer == nullptr) {
         return;
     }
