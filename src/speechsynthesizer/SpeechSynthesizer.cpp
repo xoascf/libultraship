@@ -1,6 +1,6 @@
 #include "speechsynthesizer/SpeechSynthesizer.h"
 
-namespace LUS {
+namespace Ship {
 SpeechSynthesizer::SpeechSynthesizer() : mInitialized(false){};
 
 bool SpeechSynthesizer::Init(void) {
@@ -25,4 +25,4 @@ bool SpeechSynthesizer::IsInitialized(void) {
     return mInitialized;
 }
 
-} // namespace LUS
+} // namespace Ship

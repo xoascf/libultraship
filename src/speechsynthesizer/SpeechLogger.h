@@ -3,7 +3,7 @@
 
 #include "speechsynthesizer/SpeechSynthesizer.h"
 
-namespace LUS {
+namespace Ship {
 class SpeechLogger : public SpeechSynthesizer {
   public:
     SpeechLogger();
@@ -15,6 +15,6 @@ class SpeechLogger : public SpeechSynthesizer {
     bool DoInit(void);
     void DoUninitialize(void);
 };
-} // namespace LUS
+} // namespace Ship
 
 #endif /* SpeechLogger_h */

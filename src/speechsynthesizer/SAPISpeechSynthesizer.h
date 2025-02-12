@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <string>
 
-namespace LUS {
+namespace Ship {
 class SAPISpeechSynthesizer : public SpeechSynthesizer {
   public:
     SAPISpeechSynthesizer();
@@ -17,6 +17,6 @@ class SAPISpeechSynthesizer : public SpeechSynthesizer {
     bool DoInit(void);
     void DoUninitialize(void);
 };
-} // namespace LUS
+} // namespace Ship
 
 #endif /* SAPISpeechSynthesizer_h */

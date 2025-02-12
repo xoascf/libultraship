@@ -4,7 +4,7 @@
 #include "speechsynthesizer/SpeechSynthesizer.h"
 #include <string>
 
-namespace LUS {
+namespace Ship {
 class DarwinSpeechSynthesizer : public SpeechSynthesizer {
   public:
     DarwinSpeechSynthesizer();
@@ -19,6 +19,6 @@ class DarwinSpeechSynthesizer : public SpeechSynthesizer {
   private:
     void* mSynthesizer;
 };
-} // namespace LUS
+} // namespace Ship
 
 #endif /* DarwinSpeechSynthesizer_h */

@@ -8,7 +8,7 @@
 
 ISpVoice* mVoice = NULL;
 
-namespace LUS {
+namespace Ship {
 SAPISpeechSynthesizer::SAPISpeechSynthesizer() {
 }
 
@@ -60,4 +60,4 @@ void SAPISpeechSynthesizer::Speak(std::string text, const char* language) {
     std::thread t2(SpeakStrThreadTask, text, language);
     t2.detach();
 }
-} // namespace LUS
+} // namespace Ship

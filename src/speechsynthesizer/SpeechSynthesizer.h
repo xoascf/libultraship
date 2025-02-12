@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string>
 
-namespace LUS {
+namespace Ship {
 class SpeechSynthesizer {
   public:
     SpeechSynthesizer();
@@ -23,7 +23,7 @@ class SpeechSynthesizer {
   private:
     bool mInitialized;
 };
-} // namespace LUS
+} // namespace Ship
 
 #endif /* SpeechSynthesizer_h */
 

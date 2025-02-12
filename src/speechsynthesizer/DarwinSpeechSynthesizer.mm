@@ -1,7 +1,7 @@
 #include "speechsynthesizer/DarwinSpeechSynthesizer.h"
 #import <AVFoundation/AVFoundation.h>
 
-namespace LUS {
+namespace Ship {
 DarwinSpeechSynthesizer::DarwinSpeechSynthesizer() {}
 
 bool DarwinSpeechSynthesizer::DoInit() {

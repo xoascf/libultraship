@@ -3,7 +3,7 @@
 
 #include "spdlog/spdlog.h"
 
-namespace LUS {
+namespace Ship {
 SpeechLogger::SpeechLogger() {
 }
 
@@ -22,4 +22,4 @@ bool SpeechLogger::DoInit() {
 void SpeechLogger::DoUninitialize() {
 }
 
-} // namespace LUS
+} // namespace Ship
