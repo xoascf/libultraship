@@ -37,6 +37,27 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/ship/utils/macUtils.mm PROPERTIES COMPILE_FLAGS -fno-objc-arc)
 endif()
 
+#=================== Speech Synthesizer ===================
+
+set(Source_Files__SpeechSynthesizer
+    ${CMAKE_CURRENT_SOURCE_DIR}/ship/speechsynthesizer/SpeechSynthesizer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/ship/speechsynthesizer/SpeechSynthesizer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ship/speechsynthesizer/SpeechLogger.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/ship/speechsynthesizer/SpeechLogger.cpp
+)
+
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    list(APPEND Source_Files__SpeechSynthesizer ${CMAKE_CURRENT_SOURCE_DIR}/ship/speechsynthesizer/DarwinSpeechSynthesizer.h)
+    list(APPEND Source_Files__SpeechSynthesizer ${CMAKE_CURRENT_SOURCE_DIR}/ship/speechsynthesizer/DarwinSpeechSynthesizer.mm)
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    list(APPEND Source_Files__SpeechSynthesizer ${CMAKE_CURRENT_SOURCE_DIR}/ship/speechsynthesizer/SAPISpeechSynthesizer.h)
+    list(APPEND Source_Files__SpeechSynthesizer ${CMAKE_CURRENT_SOURCE_DIR}/ship/speechsynthesizer/SAPISpeechSynthesizer.cpp)
+endif()
+
+source_group("speechsynthesizer" FILES ${Source_Files__SpeechSynthesizer})
+
+target_sources(libultraship PRIVATE ${Source_Files__SpeechSynthesizer})
+
 #=================== Packages & Includes ===================
 
 target_include_directories(libultraship

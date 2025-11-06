@@ -1,25 +1,25 @@
-#include "ship/Context.h"
-#include "ship/controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
+#include "Context.h"
+#include "controller/controldevice/controller/mapping/keyboard/KeyboardScancodes.h"
 #include <iostream>
+#include <spdlog/async.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
-#include "ship/install_config.h"
-#include "fast/debug/GfxDebugger.h"
-#include "ship/config/ConsoleVariable.h"
-#include "ship/controller/controldeck/ControlDeck.h"
-#include "ship/debug/CrashHandler.h"
-#include "ship/window/FileDropMgr.h"
+#include "install_config.h"
+#include "graphic/Fast3D/debug/GfxDebugger.h"
+#include "config/ConsoleVariable.h"
+#include "controller/controldeck/ControlDeck.h"
+#include "debug/CrashHandler.h"
+#include "window/FileDropMgr.h"
 #include "ship/speechsynthesizer/SpeechSynthesizer.h"
 
 #ifdef _WIN32
 #include <libloaderapi.h>
 #include <tchar.h>
 #include <windows.h>
-#include <stringapiset.h>
 #endif
 
 #ifdef __APPLE__
-#include "ship/utils/AppleFolderManager.h"
+#include "utils/AppleFolderManager.h"
 #include <unistd.h>
 #include <pwd.h>
 #endif
@@ -96,8 +96,7 @@ bool Context::Init(const std::vector<std::string>& archivePaths, const std::unor
            InitFileDropMgr();
 }
 
-bool Context::InitLogging(spdlog::level::level_enum debugBuildLogLevel,
-                          spdlog::level::level_enum releaseBuildLogLevel) {
+bool Context::InitLogging() {
     if (GetLogger() != nullptr) {
         return true;
     }
@@ -146,17 +145,25 @@ bool Context::InitLogging(spdlog::level::level_enum debugBuildLogLevel,
 
         auto logPath = GetPathRelativeToAppDirectory(("logs/" + GetName() + ".log"));
         auto fileSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(logPath, 1024 * 1024 * 10, 10);
-        sinks.push_back(fileSink);
 #ifdef _DEBUG
-        mLogger = std::make_shared<spdlog::logger>("multi_sink", sinks.begin(), sinks.end());
-        GetLogger()->set_level(debugBuildLogLevel);
-        GetLogger()->flush_on(spdlog::level::trace);
+        fileSink->set_level(spdlog::level::trace);
 #else
+        fileSink->set_level(spdlog::level::debug);
+#endif
+        sinks.push_back(fileSink);
+
         mLogger = std::make_shared<spdlog::async_logger>(GetName(), sinks.begin(), sinks.end(), spdlog::thread_pool(),
                                                          spdlog::async_overflow_policy::block);
-        GetLogger()->set_level(releaseBuildLogLevel);
-        GetLogger()->flush_on(spdlog::level::info);
+#ifdef _DEBUG
+        GetLogger()->set_level(spdlog::level::trace);
+#else
+        GetLogger()->set_level(spdlog::level::debug);
 #endif
+
+#if defined(_DEBUG)
+        GetLogger()->flush_on(spdlog::level::trace);
+#endif
+
         GetLogger()->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%@] [%l] %v");
 
         spdlog::register_logger(GetLogger());
@@ -199,8 +206,7 @@ bool Context::InitConsoleVariables() {
 }
 
 bool Context::InitResourceManager(const std::vector<std::string>& archivePaths,
-                                  const std::unordered_set<uint32_t>& validHashes, uint32_t reservedThreadCount,
-                                  const bool allowEmptyPaths) {
+                                  const std::unordered_set<uint32_t>& validHashes, uint32_t reservedThreadCount) {
     if (GetResourceManager() != nullptr) {
         return true;
     }
@@ -219,7 +225,7 @@ bool Context::InitResourceManager(const std::vector<std::string>& archivePaths,
         GetResourceManager()->Init(archivePaths, validHashes, reservedThreadCount);
     }
 
-    if (!allowEmptyPaths && !GetResourceManager()->IsLoaded()) {
+    if (!GetResourceManager()->IsLoaded()) {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "OTR file not found",
                                  "Main OTR file not found. Please generate one", nullptr);
         SPDLOG_ERROR("Main OTR file not found!");
@@ -446,24 +452,19 @@ std::string Context::GetAppBundlePath() {
 #endif
 
 #ifdef _WIN32
-    std::wstring progpath(MAX_PATH, '\0');
+    std::string progpath(MAX_PATH, '\0');
 
-    int len = GetModuleFileNameW(NULL, &progpath[0], progpath.size());
+    int len = GetModuleFileNameA(NULL, &progpath[0], progpath.size());
     if (len != 0 && len < progpath.size()) {
         progpath.resize(len);
 
         // Find the last '\' and remove everything after it
-        long unsigned int lastSlash = progpath.find_last_of('\\');
+        long unsigned int lastSlash = progpath.find_last_of("\\");
         if (lastSlash != std::string::npos) {
             progpath.erase(lastSlash);
         }
 
-        // Convert wstring to string
-        len = WideCharToMultiByte(CP_UTF8, 0, progpath.data(), (int)progpath.size(), nullptr, 0, nullptr, nullptr);
-        std::string newProgpath(len, 0);
-        WideCharToMultiByte(CP_UTF8, 0, progpath.data(), (int)progpath.size(), &newProgpath[0], len, nullptr, nullptr);
-
-        return newProgpath;
+        return progpath;
     }
 #endif
 
